@@ -1,0 +1,248 @@
+[
+  {
+    "model_name": "Majority Class Baseline",
+    "experiment": "ExpA_GasOnly",
+    "accuracy": 0.5912,
+    "macro_f1": 0.2477,
+    "weighted_f1": 0.4394,
+    "macro_precision": 0.1971,
+    "macro_recall": 0.3333,
+    "class_low_f1": 0.7431,
+    "class_med_f1": 0.0,
+    "class_high_f1": 0.0,
+    "class_low_rec": 1.0,
+    "class_med_rec": 0.0,
+    "class_high_rec": 0.0,
+    "class_low_prec": 0.5912,
+    "class_med_prec": 0.0,
+    "class_high_prec": 0.0,
+    "confusion_matrix": [
+      [
+        2135,
+        0,
+        0
+      ],
+      [
+        854,
+        0,
+        0
+      ],
+      [
+        622,
+        0,
+        0
+      ]
+    ],
+    "test_support_total": 3611,
+    "test_class_counts": {
+      "Low/Normal": 2135,
+      "Medium": 854,
+      "High": 622
+    }
+  },
+  {
+    "model_name": "Logistic Regression",
+    "experiment": "ExpA_GasOnly",
+    "accuracy": 0.9803,
+    "macro_f1": 0.9808,
+    "weighted_f1": 0.9804,
+    "macro_precision": 0.9776,
+    "macro_recall": 0.9842,
+    "class_low_f1": 0.9833,
+    "class_med_f1": 0.9592,
+    "class_high_f1": 1.0,
+    "class_low_rec": 0.9761,
+    "class_med_rec": 0.9766,
+    "class_high_rec": 1.0,
+    "class_low_prec": 0.9905,
+    "class_med_prec": 0.9424,
+    "class_high_prec": 1.0,
+    "confusion_matrix": [
+      [
+        2084,
+        51,
+        0
+      ],
+      [
+        20,
+        834,
+        0
+      ],
+      [
+        0,
+        0,
+        622
+      ]
+    ],
+    "test_support_total": 3611,
+    "test_class_counts": {
+      "Low/Normal": 2135,
+      "Medium": 854,
+      "High": 622
+    }
+  },
+  {
+    "model_name": "Random Forest",
+    "experiment": "ExpA_GasOnly",
+    "accuracy": 0.9853,
+    "macro_f1": 0.9856,
+    "weighted_f1": 0.9854,
+    "macro_precision": 0.984,
+    "macro_recall": 0.9873,
+    "class_low_f1": 0.9875,
+    "class_med_f1": 0.9692,
+    "class_high_f1": 1.0,
+    "class_low_rec": 0.9841,
+    "class_med_rec": 0.9778,
+    "class_high_rec": 1.0,
+    "class_low_prec": 0.991,
+    "class_med_prec": 0.9609,
+    "class_high_prec": 1.0,
+    "confusion_matrix": [
+      [
+        2101,
+        34,
+        0
+      ],
+      [
+        19,
+        835,
+        0
+      ],
+      [
+        0,
+        0,
+        622
+      ]
+    ],
+    "test_support_total": 3611,
+    "test_class_counts": {
+      "Low/Normal": 2135,
+      "Medium": 854,
+      "High": 622
+    }
+  },
+  {
+    "model_name": "Majority Class Baseline",
+    "experiment": "ExpB_7dLead",
+    "accuracy": 0.5842,
+    "macro_f1": 0.2458,
+    "weighted_f1": 0.4309,
+    "macro_precision": 0.1947,
+    "macro_recall": 0.3333,
+    "class_low_f1": 0.7375,
+    "class_med_f1": 0.0,
+    "class_high_f1": 0.0,
+    "class_low_rec": 1.0,
+    "class_med_rec": 0.0,
+    "class_high_rec": 0.0,
+    "class_low_prec": 0.5842,
+    "class_med_prec": 0.0,
+    "class_high_prec": 0.0,
+    "confusion_matrix": [
+      [
+        777,
+        0,
+        0
+      ],
+      [
+        308,
+        0,
+        0
+      ],
+      [
+        245,
+        0,
+        0
+      ]
+    ],
+    "test_support_total": 1330,
+    "test_class_counts": {
+      "Low/Normal": 777,
+      "Medium": 308,
+      "High": 245
+    }
+  },
+  {
+    "model_name": "Logistic Regression",
+    "experiment": "ExpB_7dLead",
+    "accuracy": 0.3068,
+    "macro_f1": 0.3005,
+    "weighted_f1": 0.3204,
+    "macro_precision": 0.3464,
+    "macro_recall": 0.3435,
+    "class_low_f1": 0.3511,
+    "class_med_f1": 0.2926,
+    "class_high_f1": 0.2577,
+    "class_low_rec": 0.2458,
+    "class_med_rec": 0.3929,
+    "class_high_rec": 0.3918,
+    "class_low_prec": 0.6141,
+    "class_med_prec": 0.2331,
+    "class_high_prec": 0.192,
+    "confusion_matrix": [
+      [
+        191,
+        308,
+        278
+      ],
+      [
+        61,
+        121,
+        126
+      ],
+      [
+        59,
+        90,
+        96
+      ]
+    ],
+    "test_support_total": 1330,
+    "test_class_counts": {
+      "Low/Normal": 777,
+      "Medium": 308,
+      "High": 245
+    }
+  },
+  {
+    "model_name": "Random Forest",
+    "experiment": "ExpB_7dLead",
+    "accuracy": 0.3579,
+    "macro_f1": 0.2908,
+    "weighted_f1": 0.3728,
+    "macro_precision": 0.2962,
+    "macro_recall": 0.2927,
+    "class_low_f1": 0.5018,
+    "class_med_f1": 0.24,
+    "class_high_f1": 0.1308,
+    "class_low_rec": 0.4569,
+    "class_med_rec": 0.2825,
+    "class_high_rec": 0.1388,
+    "class_low_prec": 0.5564,
+    "class_med_prec": 0.2086,
+    "class_high_prec": 0.1236,
+    "confusion_matrix": [
+      [
+        355,
+        254,
+        168
+      ],
+      [
+        148,
+        87,
+        73
+      ],
+      [
+        135,
+        76,
+        34
+      ]
+    ],
+    "test_support_total": 1330,
+    "test_class_counts": {
+      "Low/Normal": 777,
+      "Medium": 308,
+      "High": 245
+    }
+  }
+]

@@ -1,0 +1,60 @@
+{
+  "version": "1.0.0",
+  "timestamp": "2026-10-23T17:52:18.830664+00:00",
+  "feature_names": [
+    "CH4_percent",
+    "CO2_percent",
+    "O2_percent"
+  ],
+  "target_name": "Risk_Category",
+  "class_names": [
+    "Low/Normal",
+    "Medium",
+    "High"
+  ],
+  "train_samples": 11247,
+  "test_samples": 3611,
+  "rf_feature_importances": {
+    "CH4_percent": 0.5811228505204576,
+    "CO2_percent": 0.3755402076222351,
+    "O2_percent": 0.04333694185730739
+  },
+  "models_summary": {
+    "random_forest": {
+      "file": "three_gas_rf_model.joblib",
+      "accuracy": 0.9601218499030739,
+      "macro_f1": 0.9606002886763726,
+      "high_risk_recall": 1.0,
+      "high_risk_precision": 1.0,
+      "clustered_accuracy_95_ci": [
+        0.95423765432992,
+        0.9662413393715471
+      ],
+      "clustered_macro_f1_95_ci": [
+        0.954898982521557,
+        0.9664081324767779
+      ]
+    },
+    "logistic_regression": {
+      "file": "three_gas_lr_model.joblib",
+      "accuracy": 0.9271669897535308,
+      "macro_f1": 0.9301154259304694,
+      "high_risk_recall": 0.9983922829581994,
+      "high_risk_precision": 0.9967897271268058,
+      "clustered_accuracy_95_ci": [
+        0.9178978705248051,
+        0.9349405931419689
+      ],
+      "clustered_macro_f1_95_ci": [
+        0.9212457204915382,
+        0.9371825565396662
+      ]
+    },
+    "dummy": {
+      "file": "dummy_classifier.joblib",
+      "accuracy": 0.5912489615065079,
+      "macro_f1": 0.24770855087597166
+    }
+  },
+  "scientific_disclaimer": "Research prototype for temperature-derived hazard screening. Not an operational fire detection system."
+}

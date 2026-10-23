@@ -1,0 +1,10 @@
+split_type,model_name,feature_set,train_samples,test_samples,accuracy,acc_ci_95,macro_f1,macro_f1_ci_95,weighted_f1,high_precision,high_recall,high_f1,med_precision,med_recall,med_f1,low_precision,low_recall,low_f1,confusion_matrix
+Chronological_Holdout,Majority_Classifier,Original_7_Features,11247,3611,0.5912,"[0.5755, 0.6070]",0.2477,"[0.2435, 0.2518]",0.4394,0.0,0.0,0.0,0.0,0.0,0.0,0.5912,1.0,0.7431,"[[2135, 0, 0], [854, 0, 0], [622, 0, 0]]"
+Chronological_Holdout,Logistic_Regression,Original_7_Features,11247,3611,0.9803,"[0.9756, 0.9848]",0.9808,"[0.9763, 0.9853]",0.9804,1.0,1.0,1.0,0.9424,0.9766,0.9592,0.9905,0.9761,0.9833,"[[2084, 51, 0], [20, 834, 0], [0, 0, 622]]"
+Chronological_Holdout,Random_Forest,Original_7_Features,11247,3611,0.9853,"[0.9814, 0.9892]",0.9856,"[0.9818, 0.9895]",0.9854,1.0,1.0,1.0,0.9609,0.9778,0.9692,0.991,0.9841,0.9875,"[[2101, 34, 0], [19, 835, 0], [0, 0, 622]]"
+5_Fold_GroupKFold_Mean,Majority_Classifier,Original_7_Features,14775,3694,0.6041,+/- 0.0037,0.2511,+/- 0.0010,0.2511,0.0,0.0,0.0,0.0,0.0,0.0,0.7532,0.7532,0.7532,N/A (Cross-Validation Mean)
+5_Fold_GroupKFold_Mean,Logistic_Regression,Original_7_Features,14775,3694,0.9762,+/- 0.0035,0.9757,+/- 0.0034,0.9757,1.0,0.9988,0.9988,0.9475,0.9475,0.9475,0.9803,0.9803,0.9803,N/A (Cross-Validation Mean)
+5_Fold_GroupKFold_Mean,Random_Forest,Original_7_Features,14775,3694,0.9836,+/- 0.0023,0.9832,+/- 0.0022,0.9832,1.0,0.9997,0.9997,0.9633,0.9633,0.9633,0.9865,0.9865,0.9865,N/A (Cross-Validation Mean)
+SpatioTemporal_Holdout,Majority_Classifier,Original_7_Features,8977,704,0.5739,N/A,0.2431,N/A,0.4185,0.0,0.0,0.0,0.0,0.0,0.0,0.5739,1.0,0.7292,"[[404, 0, 0], [175, 0, 0], [125, 0, 0]]"
+SpatioTemporal_Holdout,Logistic_Regression,Original_7_Features,8977,704,0.9815,N/A,0.9825,N/A,0.9816,1.0,1.0,1.0,0.9451,0.9829,0.9636,0.9924,0.9752,0.9838,"[[394, 10, 0], [3, 172, 0], [0, 0, 125]]"
+SpatioTemporal_Holdout,Random_Forest,Original_7_Features,8977,704,0.9872,N/A,0.9877,N/A,0.9872,1.0,1.0,1.0,0.9716,0.9771,0.9744,0.9901,0.9876,0.9888,"[[399, 5, 0], [4, 171, 0], [0, 0, 125]]"

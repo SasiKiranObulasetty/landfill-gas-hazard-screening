@@ -1,0 +1,6 @@
+ablation_suite,features_included,num_features,chrono_test_accuracy,chrono_test_macro_f1,chrono_high_recall,chrono_high_precision,groupkfold_mean_accuracy,groupkfold_acc_std,groupkfold_mean_macro_f1,groupkfold_f1_std,groupkfold_high_recall,spatiotemporal_accuracy,spatiotemporal_macro_f1,spatiotemporal_high_recall
+Suite_1_Original_7_Features,CH4_percent; CO2_percent; O2_percent; Residual_N2_percent; Ratio_CH4_CO2; Combustion_Air_Index; Pyrolysis_Index,7,0.9853,0.9856,1.0,1.0,0.9836,0.0023,0.9832,0.0022,0.9997,0.9872,0.9877,1.0
+Suite_2_No_Engineered_Indices,CH4_percent; CO2_percent; O2_percent; Residual_N2_percent; Ratio_CH4_CO2,5,0.9862,0.9864,1.0,1.0,0.9842,0.0023,0.9838,0.0023,1.0,0.9858,0.9864,1.0
+Suite_3_No_Ratios_or_Indices,CH4_percent; CO2_percent; O2_percent; Residual_N2_percent,4,0.9867,0.9869,1.0,1.0,0.9861,0.0023,0.9857,0.0022,1.0,0.9886,0.9891,1.0
+Suite_4_Direct_Gases_Only,CH4_percent; CO2_percent; O2_percent,3,0.9601,0.9606,1.0,1.0,0.9567,0.0013,0.9551,0.0013,0.9997,0.9574,0.9591,1.0
+Suite_5_Direct_Plus_Calculated_BalanceGas,CH4_percent; CO2_percent; O2_percent; Balance_Gas,4,0.9574,0.958,1.0,1.0,0.9571,0.0013,0.9555,0.0014,1.0,0.956,0.9575,1.0

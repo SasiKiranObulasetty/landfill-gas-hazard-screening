@@ -1,0 +1,47 @@
+# Python bytecode & cache
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.pytest_cache/
+
+# Virtual environments
+.venv/
+venv/
+ENV/
+env/
+
+# IDE & Editor settings
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# Operating System files
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# Build artifacts
+build/
+dist/
+*.egg-info/
+
+# Credentials & secrets
+.env
+.env.*
+secrets.toml
+.streamlit/secrets.toml
+*.pem
+*.key
+
+# Temporary files & logs
+*.log
+*.tmp
+Cleanup_Logs/
+
+# Unused heavy satellite imagery dataset (4GB netCDF / HDF files from exploration)
+# Note: Confirmed_Minimal_Datasets/ (1.0MB) and models/ (1.5MB) are preserved for deployment
+data/
+655880d7fc235e0aa45f8b8cbbf140f5.zip
+modis_2025_India (1).csv

@@ -1,0 +1,16 @@
+evaluation_paradigm,fold,model_name,train_wells,test_wells,train_rows,test_rows,accuracy,macro_f1,high_precision,high_recall,high_f1,med_f1,low_f1
+5_Fold_GroupKFold,1,Majority_Classifier,120,30,14777,3692,0.6029,0.2508,0.0,0.0,0.0,0.0,0.7523
+5_Fold_GroupKFold,2,Majority_Classifier,120,30,14775,3694,0.6023,0.2506,0.0,0.0,0.0,0.0,0.7518
+5_Fold_GroupKFold,3,Majority_Classifier,120,30,14775,3694,0.6034,0.2509,0.0,0.0,0.0,0.0,0.7527
+5_Fold_GroupKFold,4,Majority_Classifier,120,30,14774,3695,0.6005,0.2501,0.0,0.0,0.0,0.0,0.7504
+5_Fold_GroupKFold,5,Majority_Classifier,120,30,14775,3694,0.6113,0.2529,0.0,0.0,0.0,0.0,0.7587
+5_Fold_GroupKFold,1,Logistic_Regression,120,30,14777,3692,0.9735,0.9733,1.0,0.9984,0.9992,0.9427,0.978
+5_Fold_GroupKFold,2,Logistic_Regression,120,30,14775,3694,0.9805,0.9799,1.0,0.9969,0.9985,0.957,0.9842
+5_Fold_GroupKFold,3,Logistic_Regression,120,30,14775,3694,0.9735,0.9724,1.0,1.0,1.0,0.9395,0.9778
+5_Fold_GroupKFold,4,Logistic_Regression,120,30,14774,3695,0.9732,0.9731,1.0,0.9984,0.9992,0.9425,0.9777
+5_Fold_GroupKFold,5,Logistic_Regression,120,30,14775,3694,0.9805,0.9798,1.0,1.0,1.0,0.9556,0.9839
+5_Fold_GroupKFold,1,Random_Forest,120,30,14777,3692,0.9816,0.9813,1.0,1.0,1.0,0.9592,0.9847
+5_Fold_GroupKFold,2,Random_Forest,120,30,14775,3694,0.9857,0.9854,1.0,1.0,1.0,0.9682,0.988
+5_Fold_GroupKFold,3,Random_Forest,120,30,14775,3694,0.9835,0.9826,1.0,1.0,1.0,0.9617,0.9863
+5_Fold_GroupKFold,4,Random_Forest,120,30,14774,3695,0.9808,0.9806,1.0,0.9984,0.9992,0.9583,0.9842
+5_Fold_GroupKFold,5,Random_Forest,120,30,14775,3694,0.9867,0.9861,1.0,1.0,1.0,0.9691,0.9891
