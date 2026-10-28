@@ -1068,7 +1068,7 @@ elif selected_page == "Data Updates & Monitoring":
     # Ingestion Audit Log
     st.markdown("---")
     st.markdown("### 5. Ingestion Audit Log")
-    st.caption("Immutable record of all scheduled and manual ingestion attempts with error tracking:")
+    st.caption("Auditable execution log of all scheduled and manual ingestion attempts with error tracking:")
 
     df_logs = db.get_ingestion_logs_dataframe(limit=20)
 

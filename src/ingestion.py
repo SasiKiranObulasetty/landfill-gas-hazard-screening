@@ -15,11 +15,13 @@ Provides:
 
 import os
 import sys
+import re
 import json
 import time
 import sqlite3
 import logging
 from abc import ABC, abstractmethod
+from contextlib import contextmanager
 from dataclasses import dataclass, asdict, field
 from datetime import datetime, timezone
 from pathlib import Path
@@ -194,104 +196,116 @@ class DatabaseManager:
         conn = psycopg2.connect(self.pg_url, connect_timeout=8)
         conn.close()
 
+    @contextmanager
+    def _managed_connection(self):
+        """Context manager yielding an active database connection and ensuring explicit closure."""
+        conn = self.get_connection()
+        try:
+            yield conn
+        finally:
+            try:
+                conn.close()
+            except Exception:
+                pass
+
     def _init_postgresql(self) -> None:
-        with psycopg2.connect(self.pg_url, connect_timeout=10) as conn:
-            with conn.cursor() as cursor:
-                cursor.execute("""
-                CREATE TABLE IF NOT EXISTS ingestion_logs (
-                    run_id VARCHAR(100) PRIMARY KEY,
-                    source_name VARCHAR(100) NOT NULL,
-                    start_time VARCHAR(50) NOT NULL,
-                    end_time VARCHAR(50) NOT NULL,
-                    status VARCHAR(20) NOT NULL,
-                    records_retrieved INTEGER DEFAULT 0,
-                    records_stored INTEGER DEFAULT 0,
-                    records_duplicate INTEGER DEFAULT 0,
-                    records_rejected INTEGER DEFAULT 0,
-                    error_message TEXT
-                );
-                """)
-                cursor.execute("""
-                CREATE TABLE IF NOT EXISTS external_observations (
-                    id SERIAL PRIMARY KEY,
-                    source_name VARCHAR(100) NOT NULL,
-                    source_record_id VARCHAR(255) NOT NULL,
-                    observation_timestamp VARCHAR(50) NOT NULL,
-                    retrieval_timestamp VARCHAR(50) NOT NULL,
-                    observation_type VARCHAR(50) NOT NULL,
-                    latitude DOUBLE PRECISION,
-                    longitude DOUBLE PRECISION,
-                    raw_payload_json TEXT,
-                    ch4_value DOUBLE PRECISION,
-                    ch4_unit VARCHAR(50),
-                    co2_value DOUBLE PRECISION,
-                    co2_unit VARCHAR(50),
-                    o2_value DOUBLE PRECISION,
-                    o2_unit VARCHAR(50),
-                    auxiliary_metrics_json TEXT,
-                    is_classifier_compatible INTEGER NOT NULL DEFAULT 0,
-                    incompatibility_reason TEXT,
-                    data_quality_status VARCHAR(50) NOT NULL DEFAULT 'VERIFIED_PUBLIC',
-                    is_synthetic INTEGER NOT NULL DEFAULT 0,
-                    created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
-                    CONSTRAINT uq_source_record UNIQUE(source_name, source_record_id)
-                );
-                """)
-                cursor.execute("CREATE INDEX IF NOT EXISTS idx_obs_source ON external_observations(source_name);")
-                cursor.execute("CREATE INDEX IF NOT EXISTS idx_obs_timestamp ON external_observations(observation_timestamp);")
-                cursor.execute("CREATE INDEX IF NOT EXISTS idx_obs_compatible ON external_observations(is_classifier_compatible);")
-                conn.commit()
+        with self._managed_connection() as conn:
+            with conn:
+                with conn.cursor() as cursor:
+                    cursor.execute("""
+                    CREATE TABLE IF NOT EXISTS ingestion_logs (
+                        run_id VARCHAR(100) PRIMARY KEY,
+                        source_name VARCHAR(100) NOT NULL,
+                        start_time VARCHAR(50) NOT NULL,
+                        end_time VARCHAR(50) NOT NULL,
+                        status VARCHAR(20) NOT NULL,
+                        records_retrieved INTEGER DEFAULT 0,
+                        records_stored INTEGER DEFAULT 0,
+                        records_duplicate INTEGER DEFAULT 0,
+                        records_rejected INTEGER DEFAULT 0,
+                        error_message TEXT
+                    );
+                    """)
+                    cursor.execute("""
+                    CREATE TABLE IF NOT EXISTS external_observations (
+                        id SERIAL PRIMARY KEY,
+                        source_name VARCHAR(100) NOT NULL,
+                        source_record_id VARCHAR(255) NOT NULL,
+                        observation_timestamp VARCHAR(50) NOT NULL,
+                        retrieval_timestamp VARCHAR(50) NOT NULL,
+                        observation_type VARCHAR(50) NOT NULL,
+                        latitude DOUBLE PRECISION,
+                        longitude DOUBLE PRECISION,
+                        raw_payload_json TEXT,
+                        ch4_value DOUBLE PRECISION,
+                        ch4_unit VARCHAR(50),
+                        co2_value DOUBLE PRECISION,
+                        co2_unit VARCHAR(50),
+                        o2_value DOUBLE PRECISION,
+                        o2_unit VARCHAR(50),
+                        auxiliary_metrics_json TEXT,
+                        is_classifier_compatible INTEGER NOT NULL DEFAULT 0,
+                        incompatibility_reason TEXT,
+                        data_quality_status VARCHAR(50) NOT NULL DEFAULT 'VERIFIED_PUBLIC',
+                        is_synthetic INTEGER NOT NULL DEFAULT 0,
+                        created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+                        CONSTRAINT uq_source_record UNIQUE(source_name, source_record_id)
+                    );
+                    """)
+                    cursor.execute("CREATE INDEX IF NOT EXISTS idx_obs_source ON external_observations(source_name);")
+                    cursor.execute("CREATE INDEX IF NOT EXISTS idx_obs_timestamp ON external_observations(observation_timestamp);")
+                    cursor.execute("CREATE INDEX IF NOT EXISTS idx_obs_compatible ON external_observations(is_classifier_compatible);")
 
     def _init_sqlite(self) -> None:
         self.backend = "sqlite"
         self.db_path.parent.mkdir(parents=True, exist_ok=True)
         try:
-            with sqlite3.connect(str(self.db_path), timeout=15.0) as conn:
-                cursor = conn.cursor()
-                cursor.execute("""
-                CREATE TABLE IF NOT EXISTS ingestion_logs (
-                    run_id TEXT PRIMARY KEY,
-                    source_name TEXT NOT NULL,
-                    start_time TEXT NOT NULL,
-                    end_time TEXT NOT NULL,
-                    status TEXT NOT NULL,
-                    records_retrieved INTEGER DEFAULT 0,
-                    records_stored INTEGER DEFAULT 0,
-                    records_duplicate INTEGER DEFAULT 0,
-                    records_rejected INTEGER DEFAULT 0,
-                    error_message TEXT
-                );
-                """)
-                cursor.execute("""
-                CREATE TABLE IF NOT EXISTS external_observations (
-                    id INTEGER PRIMARY KEY AUTOINCREMENT,
-                    source_name TEXT NOT NULL,
-                    source_record_id TEXT NOT NULL,
-                    observation_timestamp TEXT NOT NULL,
-                    retrieval_timestamp TEXT NOT NULL,
-                    observation_type TEXT NOT NULL,
-                    latitude REAL,
-                    longitude REAL,
-                    raw_payload_json TEXT,
-                    ch4_value REAL,
-                    ch4_unit TEXT,
-                    co2_value REAL,
-                    co2_unit TEXT,
-                    o2_value REAL,
-                    o2_unit TEXT,
-                    auxiliary_metrics_json TEXT,
-                    is_classifier_compatible INTEGER NOT NULL DEFAULT 0,
-                    incompatibility_reason TEXT,
-                    data_quality_status TEXT NOT NULL DEFAULT 'VERIFIED_PUBLIC',
-                    is_synthetic INTEGER NOT NULL DEFAULT 0,
-                    created_at TEXT DEFAULT (datetime('now')),
-                    UNIQUE(source_name, source_record_id)
-                );
-                """)
-                cursor.execute("CREATE INDEX IF NOT EXISTS idx_obs_source ON external_observations(source_name);")
-                cursor.execute("CREATE INDEX IF NOT EXISTS idx_obs_timestamp ON external_observations(observation_timestamp);")
-                cursor.execute("CREATE INDEX IF NOT EXISTS idx_obs_compatible ON external_observations(is_classifier_compatible);")
-                conn.commit()
+            with self._managed_connection() as conn:
+                with conn:
+                    cursor = conn.cursor()
+                    cursor.execute("""
+                    CREATE TABLE IF NOT EXISTS ingestion_logs (
+                        run_id TEXT PRIMARY KEY,
+                        source_name TEXT NOT NULL,
+                        start_time TEXT NOT NULL,
+                        end_time TEXT NOT NULL,
+                        status TEXT NOT NULL,
+                        records_retrieved INTEGER DEFAULT 0,
+                        records_stored INTEGER DEFAULT 0,
+                        records_duplicate INTEGER DEFAULT 0,
+                        records_rejected INTEGER DEFAULT 0,
+                        error_message TEXT
+                    );
+                    """)
+                    cursor.execute("""
+                    CREATE TABLE IF NOT EXISTS external_observations (
+                        id INTEGER PRIMARY KEY AUTOINCREMENT,
+                        source_name TEXT NOT NULL,
+                        source_record_id TEXT NOT NULL,
+                        observation_timestamp TEXT NOT NULL,
+                        retrieval_timestamp TEXT NOT NULL,
+                        observation_type TEXT NOT NULL,
+                        latitude REAL,
+                        longitude REAL,
+                        raw_payload_json TEXT,
+                        ch4_value REAL,
+                        ch4_unit TEXT,
+                        co2_value REAL,
+                        co2_unit TEXT,
+                        o2_value REAL,
+                        o2_unit TEXT,
+                        auxiliary_metrics_json TEXT,
+                        is_classifier_compatible INTEGER NOT NULL DEFAULT 0,
+                        incompatibility_reason TEXT,
+                        data_quality_status TEXT NOT NULL DEFAULT 'VERIFIED_PUBLIC',
+                        is_synthetic INTEGER NOT NULL DEFAULT 0,
+                        created_at TEXT DEFAULT (datetime('now')),
+                        UNIQUE(source_name, source_record_id)
+                    );
+                    """)
+                    cursor.execute("CREATE INDEX IF NOT EXISTS idx_obs_source ON external_observations(source_name);")
+                    cursor.execute("CREATE INDEX IF NOT EXISTS idx_obs_timestamp ON external_observations(observation_timestamp);")
+                    cursor.execute("CREATE INDEX IF NOT EXISTS idx_obs_compatible ON external_observations(is_classifier_compatible);")
             self.is_operational = True
         except Exception as e:
             logger.error(f"Failed to initialize SQLite database: {e}")
@@ -309,43 +323,43 @@ class DatabaseManager:
     def record_ingestion_run(self, summary: IngestionSummary) -> None:
         """Records the results of an ingestion run into the audit log."""
         if self.backend == "postgresql":
-            with self.get_connection() as conn:
-                with conn.cursor() as cursor:
-                    cursor.execute("""
-                    INSERT INTO ingestion_logs (
-                        run_id, source_name, start_time, end_time, status,
-                        records_retrieved, records_stored, records_duplicate, records_rejected, error_message
-                    ) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
-                    ON CONFLICT (run_id) DO UPDATE SET
-                        start_time = EXCLUDED.start_time,
-                        end_time = EXCLUDED.end_time,
-                        status = EXCLUDED.status,
-                        records_retrieved = EXCLUDED.records_retrieved,
-                        records_stored = EXCLUDED.records_stored,
-                        records_duplicate = EXCLUDED.records_duplicate,
-                        records_rejected = EXCLUDED.records_rejected,
-                        error_message = EXCLUDED.error_message;
-                    """, (
-                        summary.run_id, summary.source_name, summary.start_time, summary.end_time,
-                        summary.status, summary.records_retrieved, summary.records_stored,
-                        summary.records_duplicate, summary.records_rejected, summary.error_message
-                    ))
-                    conn.commit()
+            with self._managed_connection() as conn:
+                with conn:
+                    with conn.cursor() as cursor:
+                        cursor.execute("""
+                        INSERT INTO ingestion_logs (
+                            run_id, source_name, start_time, end_time, status,
+                            records_retrieved, records_stored, records_duplicate, records_rejected, error_message
+                        ) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+                        ON CONFLICT (run_id) DO UPDATE SET
+                            start_time = EXCLUDED.start_time,
+                            end_time = EXCLUDED.end_time,
+                            status = EXCLUDED.status,
+                            records_retrieved = EXCLUDED.records_retrieved,
+                            records_stored = EXCLUDED.records_stored,
+                            records_duplicate = EXCLUDED.records_duplicate,
+                            records_rejected = EXCLUDED.records_rejected,
+                            error_message = EXCLUDED.error_message;
+                        """, (
+                            summary.run_id, summary.source_name, summary.start_time, summary.end_time,
+                            summary.status, summary.records_retrieved, summary.records_stored,
+                            summary.records_duplicate, summary.records_rejected, summary.error_message
+                        ))
             return
 
-        with self.get_connection() as conn:
-            cursor = conn.cursor()
-            cursor.execute("""
-            INSERT OR REPLACE INTO ingestion_logs (
-                run_id, source_name, start_time, end_time, status,
-                records_retrieved, records_stored, records_duplicate, records_rejected, error_message
-            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?);
-            """, (
-                summary.run_id, summary.source_name, summary.start_time, summary.end_time,
-                summary.status, summary.records_retrieved, summary.records_stored,
-                summary.records_duplicate, summary.records_rejected, summary.error_message
-            ))
-            conn.commit()
+        with self._managed_connection() as conn:
+            with conn:
+                cursor = conn.cursor()
+                cursor.execute("""
+                INSERT OR REPLACE INTO ingestion_logs (
+                    run_id, source_name, start_time, end_time, status,
+                    records_retrieved, records_stored, records_duplicate, records_rejected, error_message
+                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?);
+                """, (
+                    summary.run_id, summary.source_name, summary.start_time, summary.end_time,
+                    summary.status, summary.records_retrieved, summary.records_stored,
+                    summary.records_duplicate, summary.records_rejected, summary.error_message
+                ))
 
     def store_observations(self, observations: List[NormalizedObservation]) -> Tuple[int, int, int]:
         """
@@ -357,74 +371,76 @@ class DatabaseManager:
         rejected = 0
 
         if self.backend == "postgresql":
-            with self.get_connection() as conn:
-                with conn.cursor() as cursor:
-                    for obs in observations:
-                        try:
-                            cursor.execute("""
-                            INSERT INTO external_observations (
-                                source_name, source_record_id, observation_timestamp, retrieval_timestamp,
-                                observation_type, latitude, longitude, raw_payload_json,
-                                ch4_value, ch4_unit, co2_value, co2_unit, o2_value, o2_unit,
-                                auxiliary_metrics_json, is_classifier_compatible, incompatibility_reason,
-                                data_quality_status, is_synthetic
-                            ) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
-                            ON CONFLICT (source_name, source_record_id) DO NOTHING
-                            RETURNING id;
-                            """, (
-                                obs.source_name, obs.source_record_id, obs.observation_timestamp,
-                                obs.retrieval_timestamp, obs.observation_type, obs.latitude,
-                                obs.longitude, obs.raw_payload_json, obs.ch4_value, obs.ch4_unit,
-                                obs.co2_value, obs.co2_unit, obs.o2_value, obs.o2_unit,
-                                obs.auxiliary_metrics_json, 1 if obs.is_classifier_compatible else 0,
-                                obs.incompatibility_reason, obs.data_quality_status,
-                                1 if obs.is_synthetic else 0
-                            ))
-                            row = cursor.fetchone()
-                            if row is not None:
-                                stored += 1
-                            else:
-                                duplicates += 1
-                        except Exception as e:
-                            logger.warning(f"Error storing record {obs.source_record_id} in PostgreSQL: {e}")
-                            rejected += 1
-                conn.commit()
+            with self._managed_connection() as conn:
+                with conn:
+                    with conn.cursor() as cursor:
+                        for obs in observations:
+                            try:
+                                cursor.execute("SAVEPOINT obs_savepoint;")
+                                cursor.execute("""
+                                INSERT INTO external_observations (
+                                    source_name, source_record_id, observation_timestamp, retrieval_timestamp,
+                                    observation_type, latitude, longitude, raw_payload_json,
+                                    ch4_value, ch4_unit, co2_value, co2_unit, o2_value, o2_unit,
+                                    auxiliary_metrics_json, is_classifier_compatible, incompatibility_reason,
+                                    data_quality_status, is_synthetic
+                                ) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+                                ON CONFLICT (source_name, source_record_id) DO NOTHING
+                                RETURNING id;
+                                """, (
+                                    obs.source_name, obs.source_record_id, obs.observation_timestamp,
+                                    obs.retrieval_timestamp, obs.observation_type, obs.latitude,
+                                    obs.longitude, obs.raw_payload_json, obs.ch4_value, obs.ch4_unit,
+                                    obs.co2_value, obs.co2_unit, obs.o2_value, obs.o2_unit,
+                                    obs.auxiliary_metrics_json, 1 if obs.is_classifier_compatible else 0,
+                                    obs.incompatibility_reason, obs.data_quality_status,
+                                    1 if obs.is_synthetic else 0
+                                ))
+                                row = cursor.fetchone()
+                                if row is not None:
+                                    stored += 1
+                                else:
+                                    duplicates += 1
+                                cursor.execute("RELEASE SAVEPOINT obs_savepoint;")
+                            except Exception as e:
+                                cursor.execute("ROLLBACK TO SAVEPOINT obs_savepoint;")
+                                logger.warning(f"Error storing record {obs.source_record_id} in PostgreSQL: {e}")
+                                rejected += 1
             return stored, duplicates, rejected
 
         # SQLite branch
-        with self.get_connection() as conn:
-            cursor = conn.cursor()
-            for obs in observations:
-                try:
-                    cursor.execute("""
-                    INSERT INTO external_observations (
-                        source_name, source_record_id, observation_timestamp, retrieval_timestamp,
-                        observation_type, latitude, longitude, raw_payload_json,
-                        ch4_value, ch4_unit, co2_value, co2_unit, o2_value, o2_unit,
-                        auxiliary_metrics_json, is_classifier_compatible, incompatibility_reason,
-                        data_quality_status, is_synthetic
-                    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);
-                    """, (
-                        obs.source_name, obs.source_record_id, obs.observation_timestamp,
-                        obs.retrieval_timestamp, obs.observation_type, obs.latitude,
-                        obs.longitude, obs.raw_payload_json, obs.ch4_value, obs.ch4_unit,
-                        obs.co2_value, obs.co2_unit, obs.o2_value, obs.o2_unit,
-                        obs.auxiliary_metrics_json, 1 if obs.is_classifier_compatible else 0,
-                        obs.incompatibility_reason, obs.data_quality_status,
-                        1 if obs.is_synthetic else 0
-                    ))
-                    stored += 1
-                except sqlite3.IntegrityError as e:
-                    if "UNIQUE constraint failed" in str(e):
-                        duplicates += 1
-                    else:
-                        logger.warning(f"Rejected record {obs.source_record_id}: {e}")
+        with self._managed_connection() as conn:
+            with conn:
+                cursor = conn.cursor()
+                for obs in observations:
+                    try:
+                        cursor.execute("""
+                        INSERT INTO external_observations (
+                            source_name, source_record_id, observation_timestamp, retrieval_timestamp,
+                            observation_type, latitude, longitude, raw_payload_json,
+                            ch4_value, ch4_unit, co2_value, co2_unit, o2_value, o2_unit,
+                            auxiliary_metrics_json, is_classifier_compatible, incompatibility_reason,
+                            data_quality_status, is_synthetic
+                        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);
+                        """, (
+                            obs.source_name, obs.source_record_id, obs.observation_timestamp,
+                            obs.retrieval_timestamp, obs.observation_type, obs.latitude,
+                            obs.longitude, obs.raw_payload_json, obs.ch4_value, obs.ch4_unit,
+                            obs.co2_value, obs.co2_unit, obs.o2_value, obs.o2_unit,
+                            obs.auxiliary_metrics_json, 1 if obs.is_classifier_compatible else 0,
+                            obs.incompatibility_reason, obs.data_quality_status,
+                            1 if obs.is_synthetic else 0
+                        ))
+                        stored += 1
+                    except sqlite3.IntegrityError as e:
+                        if "UNIQUE constraint failed" in str(e):
+                            duplicates += 1
+                        else:
+                            logger.warning(f"Rejected record {obs.source_record_id}: {e}")
+                            rejected += 1
+                    except Exception as e:
+                        logger.warning(f"Error storing record {obs.source_record_id}: {e}")
                         rejected += 1
-                except Exception as e:
-                    logger.warning(f"Error storing record {obs.source_record_id}: {e}")
-                    rejected += 1
-
-            conn.commit()
 
         return stored, duplicates, rejected
 
@@ -432,7 +448,7 @@ class DatabaseManager:
         """Returns metadata regarding the most recent ingestion run."""
         if self.backend == "postgresql":
             try:
-                with self.get_connection() as conn:
+                with self._managed_connection() as conn:
                     with conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor) as cursor:
                         cursor.execute("SELECT * FROM ingestion_logs ORDER BY start_time DESC LIMIT 1;")
                         row = cursor.fetchone()
@@ -442,7 +458,7 @@ class DatabaseManager:
                 logger.warning(f"Error fetching latest summary from PostgreSQL: {e}")
             return None
 
-        with self.get_connection() as conn:
+        with self._managed_connection() as conn:
             cursor = conn.cursor()
             cursor.execute("""
             SELECT * FROM ingestion_logs
@@ -458,7 +474,7 @@ class DatabaseManager:
         """Returns the UTC timestamp of the latest successful ingestion run."""
         if self.backend == "postgresql":
             try:
-                with self.get_connection() as conn:
+                with self._managed_connection() as conn:
                     with conn.cursor() as cursor:
                         cursor.execute("SELECT end_time FROM ingestion_logs WHERE status = 'SUCCESS' ORDER BY end_time DESC LIMIT 1;")
                         row = cursor.fetchone()
@@ -468,7 +484,7 @@ class DatabaseManager:
                 logger.warning(f"Error fetching latest sync time from PostgreSQL: {e}")
             return None
 
-        with self.get_connection() as conn:
+        with self._managed_connection() as conn:
             cursor = conn.cursor()
             cursor.execute("""
             SELECT end_time FROM ingestion_logs
@@ -485,7 +501,7 @@ class DatabaseManager:
         """Returns the UTC timestamp of the newest observation stored in the database."""
         if self.backend == "postgresql":
             try:
-                with self.get_connection() as conn:
+                with self._managed_connection() as conn:
                     with conn.cursor() as cursor:
                         cursor.execute("SELECT MAX(observation_timestamp) FROM external_observations;")
                         row = cursor.fetchone()
@@ -495,7 +511,7 @@ class DatabaseManager:
                 logger.warning(f"Error fetching latest observation timestamp from PostgreSQL: {e}")
             return None
 
-        with self.get_connection() as conn:
+        with self._managed_connection() as conn:
             cursor = conn.cursor()
             cursor.execute("SELECT MAX(observation_timestamp) FROM external_observations;")
             row = cursor.fetchone()
@@ -517,14 +533,14 @@ class DatabaseManager:
                 ORDER BY observation_timestamp DESC
                 LIMIT %s;
                 """
-                with self.get_connection() as conn:
+                with self._managed_connection() as conn:
                     df = pd.read_sql_query(query, conn, params=(limit,))
                 return df
             except Exception as e:
                 logger.warning(f"Error querying PostgreSQL observations: {e}")
                 return pd.DataFrame()
 
-        with self.get_connection() as conn:
+        with self._managed_connection() as conn:
             query = """
             SELECT
                 id, source_name, source_record_id, observation_timestamp,
@@ -542,7 +558,7 @@ class DatabaseManager:
         """Returns total, compatible, incompatible, and synthetic observation counts."""
         if self.backend == "postgresql":
             try:
-                with self.get_connection() as conn:
+                with self._managed_connection() as conn:
                     with conn.cursor() as cursor:
                         cursor.execute("SELECT COUNT(*) FROM external_observations;")
                         total = cursor.fetchone()[0] or 0
@@ -563,7 +579,7 @@ class DatabaseManager:
                 logger.warning(f"Error fetching counts from PostgreSQL: {e}")
                 return {'total': 0, 'compatible': 0, 'incompatible': 0, 'synthetic': 0, 'verified_public': 0}
 
-        with self.get_connection() as conn:
+        with self._managed_connection() as conn:
             cursor = conn.cursor()
             cursor.execute("SELECT COUNT(*) FROM external_observations;")
             total = cursor.fetchone()[0] or 0
@@ -593,14 +609,14 @@ class DatabaseManager:
                 ORDER BY start_time DESC
                 LIMIT %s;
                 """
-                with self.get_connection() as conn:
+                with self._managed_connection() as conn:
                     df = pd.read_sql_query(query, conn, params=(limit,))
                 return df
             except Exception as e:
                 logger.warning(f"Error querying PostgreSQL logs: {e}")
                 return pd.DataFrame()
 
-        with self.get_connection() as conn:
+        with self._managed_connection() as conn:
             query = """
             SELECT run_id, source_name, start_time, end_time, status,
                    records_retrieved, records_stored, records_duplicate, records_rejected, error_message
@@ -929,9 +945,14 @@ class CarbonMapperPlumeAdapter(BaseSourceAdapter):
     def normalize_record(self, raw_record: Dict[str, Any]) -> NormalizedObservation:
         retrieval_now = datetime.now(timezone.utc).isoformat()
 
-        # Extract plume candidate ID
+        # Extract plume candidate ID and detection timestamp if encoded in ID
         raw_id = str(raw_record.get('Plume Candidate ID (UTC time of detection)', 'PLUME_UNKNOWN'))
         record_id = f"PLUME_{raw_id.replace(' ', '_').replace(':', '')}"
+
+        obs_time = retrieval_now
+        m = re.search(r'(\d{4})(\d{2})(\d{2})t(\d{2})(\d{2})(\d{2})', raw_id, re.IGNORECASE)
+        if m:
+            obs_time = f"{m.group(1)}-{m.group(2)}-{m.group(3)}T{m.group(4)}:{m.group(5)}:{m.group(6)}Z"
 
         # Plume detection emission rate in kg/h
         flux_kg_h = raw_record.get('Instantaneous Emission Rate (kg/h)')
@@ -955,7 +976,7 @@ class CarbonMapperPlumeAdapter(BaseSourceAdapter):
         return NormalizedObservation(
             source_name=self.source_name,
             source_record_id=record_id,
-            observation_timestamp=retrieval_now,
+            observation_timestamp=obs_time,
             retrieval_timestamp=retrieval_now,
             observation_type='satellite_plume',
             latitude=float(raw_record.get('Latitude of Plume Origin', 0.0)),
@@ -1099,10 +1120,9 @@ def sync_external_data(
     start_time = datetime.now(timezone.utc).isoformat()
     run_id = f"RUN_{int(time.time())}_{source_name[:12]}"
 
-    adapter = get_registered_adapter(source_name)
-    logger.info(f"Starting ingestion run {run_id} for source {source_name}...")
-
     try:
+        adapter = get_registered_adapter(source_name)
+        logger.info(f"Starting ingestion run {run_id} for source {source_name}...")
         raw_records = adapter.fetch_records(max_records=max_records)
         records_retrieved = len(raw_records)
 
@@ -1178,7 +1198,7 @@ if __name__ == "__main__":
     status_diag = db.get_storage_status()
     print("==========================================================")
     print("Storage Backend:", status_diag['backend'])
-    print("Target Target:", status_diag['connection_target'])
+    print("Connection Target:", status_diag['connection_target'])
     print("Cloud Persistence Active:", status_diag['is_cloud_persistent'])
     if status_diag['init_error']:
         print("Persistence Notice:", status_diag['init_error'])

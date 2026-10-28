@@ -446,3 +446,95 @@ def test_mocked_postgresql_adapter_execution(tmp_path):
         mock_cursor.fetchone.side_effect = [("2026-10-28T18:00:00Z",)]
         latest_obs = db.get_latest_observation_timestamp()
         assert latest_obs == "2026-10-28T18:00:00Z"
+
+
+# ==============================================================================
+# TEST 17: INVALID SOURCE NAME AUDITED AS FAILURE
+# ==============================================================================
+def test_invalid_source_name_audited_as_failure(tmp_path):
+    """Verify that an unknown or invalid source name logs an audited FAILED entry."""
+    db = DatabaseManager(db_path=tmp_path / "audit_fail.db")
+    summary = sync_external_data("Unknown_Source_ABC", db_manager=db)
+    assert summary.status == "FAILED"
+    assert summary.error_message is not None
+    assert "Unknown_Source_ABC" in summary.error_message
+
+    logs = db.get_ingestion_logs_dataframe()
+    assert len(logs) >= 1
+    assert logs.iloc[0]['status'] == "FAILED"
+    assert "Unknown_Source_ABC" in logs.iloc[0]['error_message']
+
+
+# ==============================================================================
+# TEST 18: CARBON MAPPER DETECTION TIMESTAMP EXTRACTION
+# ==============================================================================
+def test_carbon_mapper_candidate_timestamp_extraction():
+    """Verify that candidate ID timestamps (tYYYYMMDDtHHMMSS) are parsed into observation_timestamp."""
+    adapter = CarbonMapperPlumeAdapter()
+    raw = {
+        'GHGRP ID': 1007026,
+        'Latitude of Plume Origin': 38.77,
+        'Longitude of Plume Origin': -90.44,
+        'Plume Candidate ID (UTC time of detection)': 'GAO20211026t174729p0000-B',
+        'Instantaneous Emission Rate (kg/h)': 4500.0,
+        'Instantaneous Emission Rate Uncertainty (kg/h)': 250.0
+    }
+    norm = adapter.normalize_record(raw)
+    assert norm.observation_timestamp == "2021-10-26T17:47:29Z"
+    assert norm.retrieval_timestamp is not None
+    assert norm.observation_type == "satellite_plume"
+    assert norm.is_classifier_compatible is False
+
+
+# ==============================================================================
+# TEST 19: POSTGRESQL SAVEPOINT ERROR ISOLATION
+# ==============================================================================
+def test_postgresql_savepoint_error_isolation(tmp_path):
+    """Verify PostgreSQL batch store uses savepoints to prevent InFailedSqlTransaction cascade."""
+    mock_conn = MagicMock()
+    mock_cursor = MagicMock()
+    mock_conn.__enter__.return_value = mock_conn
+    mock_conn.cursor.return_value.__enter__.return_value = mock_cursor
+
+    pg_url = "postgresql://pguser:pgpass@remotehost:5432/landfill_db"
+
+    with patch("psycopg2.connect", return_value=mock_conn):
+        db = DatabaseManager(db_path=tmp_path / "unused.db", connection_url=pg_url)
+
+        obs1 = NormalizedObservation(
+            source_name="US_EPA_Envirofacts_GHGRP",
+            source_record_id="EPA_VALID_1",
+            observation_timestamp="2026-10-29T00:00:00Z",
+            retrieval_timestamp="2026-10-29T00:00:05Z",
+            observation_type="facility_regulatory"
+        )
+        obs2 = NormalizedObservation(
+            source_name="US_EPA_Envirofacts_GHGRP",
+            source_record_id="EPA_ERROR_2",
+            observation_timestamp="2026-10-29T00:00:00Z",
+            retrieval_timestamp="2026-10-29T00:00:05Z",
+            observation_type="facility_regulatory"
+        )
+
+        # Simulate obs1 success, obs2 query failure
+        mock_cursor.execute.side_effect = [
+            None, None, None,  # _init_postgresql table & indices
+            None,  # SAVEPOINT obs1
+            None,  # INSERT obs1
+            None,  # RELEASE SAVEPOINT obs1
+            None,  # SAVEPOINT obs2
+            Exception("Simulated constraint violation on record 2"),  # INSERT obs2 raises
+            None   # ROLLBACK TO SAVEPOINT obs2
+        ]
+        mock_cursor.fetchone.side_effect = [(1,)]
+
+        stored, dup, rej = db.store_observations([obs1, obs2])
+        assert stored == 1
+        assert dup == 0
+        assert rej == 1
+
+        # Check that savepoint and rollback statements were issued
+        calls = [str(c[0][0]) for c in mock_cursor.execute.call_args_list if c[0]]
+        assert any("SAVEPOINT obs_savepoint" in c for c in calls)
+        assert any("ROLLBACK TO SAVEPOINT obs_savepoint" in c for c in calls)
+
