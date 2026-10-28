@@ -1,0 +1,92 @@
+name: Scheduled Environmental Data Ingestion
+
+# Automated Environmental Data Ingestion & Monitoring Pipeline
+# AI-Based Hazardous Gas Hotspot Detection and Fire Risk Prediction in Solid Waste Landfills
+#
+# Cadence:
+# - Scheduled weekly run on Monday at 06:00 UTC (matching EPA GHGRP / remote sensing update cycle).
+# - Manual execution supported via workflow_dispatch with configurable source and record limits.
+#
+# Persistence Note:
+# GitHub Actions runners are ephemeral containers. In production, persistent storage
+# should be backed by a managed database (PostgreSQL/Supabase) or object storage (S3/GCS/Azure Blob).
+# This workflow saves the generated SQLite database as a run artifact and supports syncing
+# to remote storage when configured via repository secrets.
+
+on:
+  schedule:
+    # Every Monday at 06:00 UTC (01:00 EST / 00:00 CST)
+    - cron: '0 6 * * 1'
+  workflow_dispatch:
+    inputs:
+      source:
+        description: 'Target Environmental Data Source Adapter'
+        required: true
+        default: 'US_EPA_Envirofacts_GHGRP'
+        type: choice
+        options:
+          - 'US_EPA_Envirofacts_GHGRP'
+          - 'Open_Meteo_Ambient_Weather'
+          - 'Carbon_Mapper_Plume_Catalog'
+          - 'Synthetic_Test_Fixture'
+      max_records:
+        description: 'Maximum records to fetch in this cycle'
+        required: true
+        default: '25'
+        type: string
+
+jobs:
+  ingest:
+    name: Ingest Environmental Observations
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+          cache: 'pip'
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+
+      - name: Verify Pre-Flight Configuration
+        env:
+          PERSISTENT_DATABASE_URL: ${{ secrets.PERSISTENT_DATABASE_URL }}
+        run: |
+          echo "=========================================================="
+          echo "Running Ingestion Pre-Flight Diagnostics..."
+          echo "Target Source: ${{ github.event.inputs.source || 'US_EPA_Envirofacts_GHGRP' }}"
+          echo "Execution Time: $(date -u '+%Y-%m-%dT%H:%M:%SZ')"
+          if [ -n "$PERSISTENT_DATABASE_URL" ]; then
+            echo "Cloud Persistence: CONFIGURED (Managed PostgreSQL)"
+          else
+            echo "Cloud Persistence: NOT CONFIGURED (Falling back to runner-local ephemeral SQLite)"
+            echo "NOTICE: Observations from this run will NOT sync to the deployed Streamlit website"
+            echo "until PERSISTENT_DATABASE_URL is configured in repository secrets."
+          fi
+          echo "=========================================================="
+
+      - name: Execute Idempotent Data Ingestion
+        env:
+          CARBON_MAPPER_API_KEY: ${{ secrets.CARBON_MAPPER_API_KEY }}
+          PERSISTENT_DATABASE_URL: ${{ secrets.PERSISTENT_DATABASE_URL }}
+          DATABASE_URL: ${{ secrets.PERSISTENT_DATABASE_URL }}
+        run: |
+          python src/ingestion.py \
+            --source "${{ github.event.inputs.source || 'US_EPA_Envirofacts_GHGRP' }}" \
+            --max-records "${{ github.event.inputs.max_records || '25' }}"
+
+      - name: Upload Ingestion Database Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: external-monitoring-db
+          path: data/external_monitoring.db
+          retention-days: 30
+          if-no-files-found: warn
