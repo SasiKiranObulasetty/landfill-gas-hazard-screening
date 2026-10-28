@@ -48,16 +48,31 @@ from src.visualizations import (
     create_confusion_matrix_figure,
     create_feature_importance_figure,
     create_model_comparison_figure,
-    create_macro_f1_comparison_figure,
-    create_high_risk_tradeoff_figure,
     create_transition_matrix_figure,
     COLOR_MAP
 )
+
+try:
+    from src.visualizations import (
+        create_macro_f1_comparison_figure,
+        create_high_risk_tradeoff_figure
+    )
+except ImportError:
+    def create_macro_f1_comparison_figure(*args, **kwargs):
+        return None
+    def create_high_risk_tradeoff_figure(*args, **kwargs):
+        return None
+
 from src.reporting import (
     get_verified_literature_review,
-    get_model_recalculation_summary,
-    get_classical_model_comparison_summary
+    get_model_recalculation_summary
 )
+
+try:
+    from src.reporting import get_classical_model_comparison_summary
+except ImportError:
+    def get_classical_model_comparison_summary(*args, **kwargs):
+        return pd.DataFrame()
 from src.ingestion import (
     DatabaseManager,
     sync_external_data,

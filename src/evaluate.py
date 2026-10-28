@@ -50,6 +50,7 @@ def compute_comprehensive_metrics(y_true: np.ndarray, y_pred: np.ndarray) -> Dic
     denom = prec + rec
     f1 = np.divide(2 * prec * rec, denom, out=np.zeros(3, dtype=float), where=denom > 0)
     macro_f1 = float(np.mean(f1))
+    weighted_f1 = float(np.sum(f1 * row_sums) / total) if total > 0 else 0.0
 
     # Compute per-class specificity: TN / (TN + FP)
     spec = np.zeros(3, dtype=float)
@@ -73,6 +74,7 @@ def compute_comprehensive_metrics(y_true: np.ndarray, y_pred: np.ndarray) -> Dic
     return {
         'accuracy': float(acc),
         'macro_f1': float(macro_f1),
+        'weighted_f1': float(weighted_f1),
         'per_class': per_class,
         'confusion_matrix': cm.tolist(),
         'high_risk_recall': float(rec[2]),

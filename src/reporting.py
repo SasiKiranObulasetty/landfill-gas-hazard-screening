@@ -141,3 +141,41 @@ def get_model_recalculation_summary() -> pd.DataFrame:
         }
     ]
     return pd.DataFrame(data)
+
+
+def get_classical_model_comparison_summary() -> pd.DataFrame:
+    """
+    Returns the comprehensive 8-model classical machine learning comparison table
+    evaluated on the exact chronological test split (N=3,611).
+    Reads live results from models/model_metadata.json.
+    """
+    meta_path = PROJECT_ROOT / "models" / "model_metadata.json"
+    if meta_path.exists():
+        import json
+        with open(meta_path, 'r') as f:
+            meta = json.load(f)
+        summary = meta.get('models_summary', {})
+        rows = []
+        for key, info in summary.items():
+            acc_ci = info.get('clustered_accuracy_95_ci', [0.0, 0.0])
+            f1_ci = info.get('clustered_macro_f1_95_ci', [0.0, 0.0])
+            rows.append({
+                "Model_Key": key,
+                "Model": info.get('display_name', key),
+                "Split": "Chronological (N=3,611)",
+                "Accuracy": round(info.get('accuracy', 0.0), 4),
+                "Macro_F1": round(info.get('macro_f1', 0.0), 4),
+                "Weighted_F1": round(info.get('weighted_f1', 0.0), 4),
+                "High_Risk_Recall": round(info.get('high_risk_recall', 0.0), 4),
+                "High_Risk_Precision": round(info.get('high_risk_precision', 0.0), 4),
+                "High_Risk_Specificity": round(info.get('high_risk_specificity', 0.0), 4),
+                "Train_Time_Sec": round(info.get('train_time_sec', 0.0), 4),
+                "Infer_Time_Sec": round(info.get('inference_time_sec', 0.0), 4),
+                "Clustered_Acc_95_CI": f"[{acc_ci[0]:.4f}, {acc_ci[1]:.4f}]" if len(acc_ci) == 2 else "N/A",
+                "Clustered_Macro_F1_95_CI": f"[{f1_ci[0]:.4f}, {f1_ci[1]:.4f}]" if len(f1_ci) == 2 else "N/A"
+            })
+        if rows:
+            return pd.DataFrame(rows)
+
+    return pd.DataFrame()
+

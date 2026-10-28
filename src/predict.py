@@ -60,7 +60,12 @@ def get_model_and_metadata(model_type: str = 'random_forest') -> Tuple[Any, Dict
     file_mapping = {
         'random_forest': 'three_gas_rf_model.joblib',
         'logistic_regression': 'three_gas_lr_model.joblib',
-        'dummy': 'dummy_classifier.joblib'
+        'dummy': 'dummy_classifier.joblib',
+        'decision_tree': 'decision_tree_model.joblib',
+        'extra_trees': 'extra_trees_model.joblib',
+        'hist_gradient_boosting': 'hist_gradient_boosting_model.joblib',
+        'svm': 'svm_model.joblib',
+        'knn': 'knn_model.joblib'
     }
 
     if model_type not in file_mapping:

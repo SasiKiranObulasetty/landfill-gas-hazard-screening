@@ -380,7 +380,8 @@ def create_model_comparison_figure(comparison_df: pd.DataFrame, use_plotly: bool
     else:
         fig, ax = plt.subplots(figsize=(8, 4.5))
         # fallback
-        comparison_df.set_index('Model')[['Accuracy', 'Macro-F1', 'High-Risk Recall']].plot(
+        cols_to_plot = [c for c in ['Accuracy', 'Macro-F1', 'High-Risk Recall'] if c in comparison_df.columns]
+        comparison_df.set_index('Model')[cols_to_plot].plot(
             kind='bar', ax=ax, width=0.7, colormap='viridis'
         )
         ax.set_title("Model Comparison on Chronological Holdout", fontweight='bold')
@@ -390,6 +391,108 @@ def create_model_comparison_figure(comparison_df: pd.DataFrame, use_plotly: bool
         plt.xticks(rotation=0)
         plt.tight_layout()
         return fig
+
+
+def create_macro_f1_comparison_figure(comparison_df: pd.DataFrame, use_plotly: bool = True):
+    """Horizontal bar chart comparing Macro-F1 across all evaluated models."""
+    f1_col = 'Macro_F1' if 'Macro_F1' in comparison_df.columns else ('Macro-F1' if 'Macro-F1' in comparison_df.columns else None)
+    if f1_col is None:
+        return None
+    df_sorted = comparison_df.sort_values(by=f1_col, ascending=True)
+    models = df_sorted['Model'].tolist()
+    scores = df_sorted[f1_col].tolist()
+
+    colors = []
+    max_score = max(scores) if scores else 1.0
+    for s, m in zip(scores, models):
+        if 'Dummy' in m or 'Majority' in m:
+            colors.append('#94a3b8')
+        elif abs(s - max_score) < 1e-4:
+            colors.append('#16a34a')
+        else:
+            colors.append('#2563eb')
+
+    if use_plotly and HAS_PLOTLY:
+        fig = go.Figure(go.Bar(
+            x=scores,
+            y=models,
+            orientation='h',
+            marker_color=colors,
+            text=[f"{v:.4f}" for v in scores],
+            textposition='auto'
+        ))
+        fig.update_layout(
+            title="Macro-F1 Performance Comparison (Chronological Test Set N=3,611)",
+            xaxis_title="Macro-F1 Score",
+            yaxis_title="Classifier",
+            template="plotly_white",
+            height=380,
+            xaxis=dict(range=[0, 1.1])
+        )
+        return fig
+    else:
+        fig, ax = plt.subplots(figsize=(8, 4))
+        ax.barh(models, scores, color=colors, height=0.6)
+        for i, v in enumerate(scores):
+            ax.text(v + 0.01, i, f"{v:.4f}", va='center', fontweight='bold', fontsize=9)
+        ax.set_title("Macro-F1 Score by Model", fontweight='bold')
+        ax.set_xlabel("Macro-F1 Score")
+        ax.set_xlim(0, 1.15)
+        plt.tight_layout()
+        return fig
+
+
+def create_high_risk_tradeoff_figure(comparison_df: pd.DataFrame, use_plotly: bool = True):
+    """Bar chart comparing High-Risk Recall and Precision across all evaluated models."""
+    rec_col = 'High_Risk_Recall' if 'High_Risk_Recall' in comparison_df.columns else ('High-Risk Recall' if 'High-Risk Recall' in comparison_df.columns else None)
+    prec_col = 'High_Risk_Precision' if 'High_Risk_Precision' in comparison_df.columns else ('High-Risk Precision' if 'High-Risk Precision' in comparison_df.columns else None)
+    
+    if rec_col is None:
+        return None
+
+    models = comparison_df['Model'].unique()
+    if use_plotly and HAS_PLOTLY:
+        fig = go.Figure()
+        fig.add_trace(go.Bar(
+            name='High-Risk Recall',
+            x=models,
+            y=comparison_df[rec_col],
+            marker_color='#dc2626',
+            text=[f"{v*100:.1f}%" if v <= 1.0 else f"{v:.1f}%" for v in comparison_df[rec_col]],
+            textposition='auto'
+        ))
+        if prec_col and prec_col in comparison_df.columns:
+            fig.add_trace(go.Bar(
+                name='High-Risk Precision',
+                x=models,
+                y=comparison_df[prec_col],
+                marker_color='#f97316',
+                text=[f"{v*100:.1f}%" if v <= 1.0 else f"{v:.1f}%" for v in comparison_df[prec_col]],
+                textposition='auto'
+            ))
+            
+        fig.update_layout(
+            barmode='group',
+            title="High-Risk Class: Precision vs. Recall Tradeoff",
+            yaxis_title="Score (0.0 - 1.0)",
+            template="plotly_white",
+            height=420,
+            yaxis=dict(range=[0, 1.15])
+        )
+        return fig
+    else:
+        fig, ax = plt.subplots(figsize=(8, 4))
+        cols = [c for c in [rec_col, prec_col] if c and c in comparison_df.columns]
+        comparison_df.set_index('Model')[cols].plot(
+            kind='bar', ax=ax, width=0.7, color=['#dc2626', '#f97316']
+        )
+        ax.set_title("High-Risk Precision vs Recall", fontweight='bold')
+        ax.set_ylabel("Score")
+        ax.set_ylim(0, 1.15)
+        plt.xticks(rotation=20, ha='right')
+        plt.tight_layout()
+        return fig
+
 
 
 # ==============================================================================

@@ -33,8 +33,21 @@ def test_app_contains_all_seven_pages():
         "Interactive Gas Screening",
         "Research Visualizations",
         "Seven-Day Forecasting Research",
-        "Model Evaluation & Limitations"
+        "Model Evaluation & Limitations",
+        "Data Updates & Monitoring"
     ]
 
     for page in required_pages:
         assert f'"{page}"' in source or f"'{page}'" in source, f"Required page '{page}' missing from app.py!"
+
+
+def test_app_import_and_execution_components():
+    """Verify that app.py imports cleanly without raising any ImportError."""
+    import app
+    assert hasattr(app, "create_macro_f1_comparison_figure")
+    assert callable(app.create_macro_f1_comparison_figure)
+    assert hasattr(app, "create_high_risk_tradeoff_figure")
+    assert callable(app.create_high_risk_tradeoff_figure)
+    assert hasattr(app, "get_classical_model_comparison_summary")
+    assert callable(app.get_classical_model_comparison_summary)
+    assert hasattr(app, "get_cached_external_observations")

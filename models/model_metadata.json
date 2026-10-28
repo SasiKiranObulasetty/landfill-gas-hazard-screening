@@ -1,6 +1,6 @@
 {
-  "version": "1.0.0",
-  "timestamp": "2026-10-23T17:52:18.830664+00:00",
+  "version": "1.1.0",
+  "timestamp": "2026-10-24T12:46:26.411496+00:00",
   "feature_names": [
     "CH4_percent",
     "CO2_percent",
@@ -20,27 +20,79 @@
     "O2_percent": 0.04333694185730739
   },
   "models_summary": {
-    "random_forest": {
-      "file": "three_gas_rf_model.joblib",
-      "accuracy": 0.9601218499030739,
-      "macro_f1": 0.9606002886763726,
-      "high_risk_recall": 1.0,
-      "high_risk_precision": 1.0,
+    "dummy": {
+      "file": "dummy_classifier.joblib",
+      "display_name": "Dummy Majority Baseline",
+      "accuracy": 0.5912489615065079,
+      "macro_f1": 0.24770855087597166,
+      "weighted_f1": 0.4393722703851006,
+      "high_risk_recall": 0.0,
+      "high_risk_precision": 0.0,
+      "high_risk_specificity": 1.0,
+      "train_time_sec": 0.1576,
+      "inference_time_sec": 0.0026,
+      "inference_latency_ms": 0.0007,
       "clustered_accuracy_95_ci": [
-        0.95423765432992,
-        0.9662413393715471
+        0.5749229976360658,
+        0.6082866473707773
       ],
       "clustered_macro_f1_95_ci": [
-        0.954898982521557,
-        0.9664081324767779
-      ]
+        0.24336554758934228,
+        0.25214686210095055
+      ],
+      "confusion_matrix": [
+        [
+          2135,
+          0,
+          0
+        ],
+        [
+          854,
+          0,
+          0
+        ],
+        [
+          622,
+          0,
+          0
+        ]
+      ],
+      "per_class": {
+        "Low/Normal": {
+          "precision": 0.5912489615065079,
+          "recall": 1.0,
+          "f1_score": 0.743125652627915,
+          "specificity": 0.0,
+          "support": 2135
+        },
+        "Medium": {
+          "precision": 0.0,
+          "recall": 0.0,
+          "f1_score": 0.0,
+          "specificity": 1.0,
+          "support": 854
+        },
+        "High": {
+          "precision": 0.0,
+          "recall": 0.0,
+          "f1_score": 0.0,
+          "specificity": 1.0,
+          "support": 622
+        }
+      }
     },
     "logistic_regression": {
       "file": "three_gas_lr_model.joblib",
+      "display_name": "Logistic Regression (Pipeline)",
       "accuracy": 0.9271669897535308,
       "macro_f1": 0.9301154259304694,
+      "weighted_f1": 0.9283999605035836,
       "high_risk_recall": 0.9983922829581994,
       "high_risk_precision": 0.9967897271268058,
+      "high_risk_specificity": 0.9993308798929408,
+      "train_time_sec": 0.5795,
+      "inference_time_sec": 0.0035,
+      "inference_latency_ms": 0.001,
       "clustered_accuracy_95_ci": [
         0.9178978705248051,
         0.9349405931419689
@@ -48,12 +100,413 @@
       "clustered_macro_f1_95_ci": [
         0.9212457204915382,
         0.9371825565396662
-      ]
+      ],
+      "confusion_matrix": [
+        [
+          1950,
+          185,
+          0
+        ],
+        [
+          75,
+          777,
+          2
+        ],
+        [
+          0,
+          1,
+          621
+        ]
+      ],
+      "per_class": {
+        "Low/Normal": {
+          "precision": 0.9629629629629629,
+          "recall": 0.9133489461358314,
+          "f1_score": 0.9375,
+          "specificity": 0.9491869918699187,
+          "support": 2135
+        },
+        "Medium": {
+          "precision": 0.8068535825545171,
+          "recall": 0.9098360655737705,
+          "f1_score": 0.8552559163456247,
+          "specificity": 0.9325353645266594,
+          "support": 854
+        },
+        "High": {
+          "precision": 0.9967897271268058,
+          "recall": 0.9983922829581994,
+          "f1_score": 0.9975903614457832,
+          "specificity": 0.9993308798929408,
+          "support": 622
+        }
+      }
     },
-    "dummy": {
-      "file": "dummy_classifier.joblib",
-      "accuracy": 0.5912489615065079,
-      "macro_f1": 0.24770855087597166
+    "random_forest": {
+      "file": "three_gas_rf_model.joblib",
+      "display_name": "Random Forest Classifier",
+      "accuracy": 0.9601218499030739,
+      "macro_f1": 0.9606002886763726,
+      "weighted_f1": 0.960093705372176,
+      "high_risk_recall": 1.0,
+      "high_risk_precision": 1.0,
+      "high_risk_specificity": 1.0,
+      "train_time_sec": 1.2966,
+      "inference_time_sec": 0.1655,
+      "inference_latency_ms": 0.0458,
+      "clustered_accuracy_95_ci": [
+        0.95423765432992,
+        0.9662413393715471
+      ],
+      "clustered_macro_f1_95_ci": [
+        0.954898982521557,
+        0.9664081324767779
+      ],
+      "confusion_matrix": [
+        [
+          2065,
+          70,
+          0
+        ],
+        [
+          74,
+          780,
+          0
+        ],
+        [
+          0,
+          0,
+          622
+        ]
+      ],
+      "per_class": {
+        "Low/Normal": {
+          "precision": 0.9654043945769051,
+          "recall": 0.9672131147540983,
+          "f1_score": 0.9663079082826392,
+          "specificity": 0.9498644986449865,
+          "support": 2135
+        },
+        "Medium": {
+          "precision": 0.9176470588235294,
+          "recall": 0.9133489461358314,
+          "f1_score": 0.9154929577464789,
+          "specificity": 0.9746100834240116,
+          "support": 854
+        },
+        "High": {
+          "precision": 1.0,
+          "recall": 1.0,
+          "f1_score": 1.0,
+          "specificity": 1.0,
+          "support": 622
+        }
+      }
+    },
+    "decision_tree": {
+      "file": "decision_tree_model.joblib",
+      "display_name": "Decision Tree Classifier",
+      "accuracy": 0.9554140127388535,
+      "macro_f1": 0.9560263703432007,
+      "weighted_f1": 0.9554218351410115,
+      "high_risk_recall": 1.0,
+      "high_risk_precision": 1.0,
+      "high_risk_specificity": 1.0,
+      "train_time_sec": 0.0771,
+      "inference_time_sec": 0.0025,
+      "inference_latency_ms": 0.0007,
+      "clustered_accuracy_95_ci": [
+        0.9491426008340489,
+        0.9619535031008097
+      ],
+      "clustered_macro_f1_95_ci": [
+        0.9499640535696899,
+        0.9624402318967862
+      ],
+      "confusion_matrix": [
+        [
+          2054,
+          81,
+          0
+        ],
+        [
+          80,
+          774,
+          0
+        ],
+        [
+          0,
+          0,
+          622
+        ]
+      ],
+      "per_class": {
+        "Low/Normal": {
+          "precision": 0.9625117150890347,
+          "recall": 0.9620608899297424,
+          "f1_score": 0.9622862497071913,
+          "specificity": 0.94579945799458,
+          "support": 2135
+        },
+        "Medium": {
+          "precision": 0.9052631578947369,
+          "recall": 0.9063231850117096,
+          "f1_score": 0.9057928613224108,
+          "specificity": 0.970620239390642,
+          "support": 854
+        },
+        "High": {
+          "precision": 1.0,
+          "recall": 1.0,
+          "f1_score": 1.0,
+          "specificity": 1.0,
+          "support": 622
+        }
+      }
+    },
+    "extra_trees": {
+      "file": "extra_trees_model.joblib",
+      "display_name": "Extra Trees Classifier",
+      "accuracy": 0.9415674328440875,
+      "macro_f1": 0.9434566096911308,
+      "weighted_f1": 0.942213630906095,
+      "high_risk_recall": 0.9983922829581994,
+      "high_risk_precision": 1.0,
+      "high_risk_specificity": 1.0,
+      "train_time_sec": 0.691,
+      "inference_time_sec": 0.1114,
+      "inference_latency_ms": 0.0309,
+      "clustered_accuracy_95_ci": [
+        0.9328398776053296,
+        0.9489299252593986
+      ],
+      "clustered_macro_f1_95_ci": [
+        0.9355680285814729,
+        0.9502701174053466
+      ],
+      "confusion_matrix": [
+        [
+          1997,
+          138,
+          0
+        ],
+        [
+          72,
+          782,
+          0
+        ],
+        [
+          0,
+          1,
+          621
+        ]
+      ],
+      "per_class": {
+        "Low/Normal": {
+          "precision": 0.9652005799903335,
+          "recall": 0.9353629976580796,
+          "f1_score": 0.9500475737392959,
+          "specificity": 0.9512195121951219,
+          "support": 2135
+        },
+        "Medium": {
+          "precision": 0.8490770901194354,
+          "recall": 0.9156908665105387,
+          "f1_score": 0.8811267605633804,
+          "specificity": 0.9495828799419659,
+          "support": 854
+        },
+        "High": {
+          "precision": 1.0,
+          "recall": 0.9983922829581994,
+          "f1_score": 0.999195494770716,
+          "specificity": 1.0,
+          "support": 622
+        }
+      }
+    },
+    "hist_gradient_boosting": {
+      "file": "hist_gradient_boosting_model.joblib",
+      "display_name": "HistGradientBoosting Classifier",
+      "accuracy": 0.9520908335641096,
+      "macro_f1": 0.9527488327290293,
+      "weighted_f1": 0.9520992390024533,
+      "high_risk_recall": 1.0,
+      "high_risk_precision": 1.0,
+      "high_risk_specificity": 1.0,
+      "train_time_sec": 4.758,
+      "inference_time_sec": 0.0355,
+      "inference_latency_ms": 0.0098,
+      "clustered_accuracy_95_ci": [
+        0.9445207167100778,
+        0.9585657151960756
+      ],
+      "clustered_macro_f1_95_ci": [
+        0.94542522337398,
+        0.9588747565917446
+      ],
+      "confusion_matrix": [
+        [
+          2048,
+          87,
+          0
+        ],
+        [
+          86,
+          768,
+          0
+        ],
+        [
+          0,
+          0,
+          622
+        ]
+      ],
+      "per_class": {
+        "Low/Normal": {
+          "precision": 0.9597000937207123,
+          "recall": 0.9592505854800937,
+          "f1_score": 0.9594752869524479,
+          "specificity": 0.9417344173441734,
+          "support": 2135
+        },
+        "Medium": {
+          "precision": 0.8982456140350877,
+          "recall": 0.8992974238875878,
+          "f1_score": 0.8987712112346401,
+          "specificity": 0.9684439608269858,
+          "support": 854
+        },
+        "High": {
+          "precision": 1.0,
+          "recall": 1.0,
+          "f1_score": 1.0,
+          "specificity": 1.0,
+          "support": 622
+        }
+      }
+    },
+    "svm": {
+      "file": "svm_model.joblib",
+      "display_name": "Support Vector Machine (RBF)",
+      "accuracy": 0.9357518692882858,
+      "macro_f1": 0.9378755515396797,
+      "weighted_f1": 0.936562248505277,
+      "high_risk_recall": 0.9983922829581994,
+      "high_risk_precision": 0.9983922829581994,
+      "high_risk_specificity": 0.9996654399464704,
+      "train_time_sec": 11.6784,
+      "inference_time_sec": 1.3609,
+      "inference_latency_ms": 0.3769,
+      "clustered_accuracy_95_ci": [
+        0.9264469480140244,
+        0.9440885816812662
+      ],
+      "clustered_macro_f1_95_ci": [
+        0.9292038852703536,
+        0.9454494019306149
+      ],
+      "confusion_matrix": [
+        [
+          1981,
+          154,
+          0
+        ],
+        [
+          76,
+          777,
+          1
+        ],
+        [
+          0,
+          1,
+          621
+        ]
+      ],
+      "per_class": {
+        "Low/Normal": {
+          "precision": 0.9630529897909577,
+          "recall": 0.9278688524590164,
+          "f1_score": 0.9451335877862596,
+          "specificity": 0.948509485094851,
+          "support": 2135
+        },
+        "Medium": {
+          "precision": 0.8336909871244635,
+          "recall": 0.9098360655737705,
+          "f1_score": 0.8701007838745801,
+          "specificity": 0.9437794704388829,
+          "support": 854
+        },
+        "High": {
+          "precision": 0.9983922829581994,
+          "recall": 0.9983922829581994,
+          "f1_score": 0.9983922829581994,
+          "specificity": 0.9996654399464704,
+          "support": 622
+        }
+      }
+    },
+    "knn": {
+      "file": "knn_model.joblib",
+      "display_name": "K-Nearest Neighbors (k=5)",
+      "accuracy": 0.9529216283577956,
+      "macro_f1": 0.9515103220831932,
+      "weighted_f1": 0.9523657842758935,
+      "high_risk_recall": 0.9919614147909968,
+      "high_risk_precision": 1.0,
+      "high_risk_specificity": 1.0,
+      "train_time_sec": 0.0503,
+      "inference_time_sec": 0.0304,
+      "inference_latency_ms": 0.0084,
+      "clustered_accuracy_95_ci": [
+        0.9460692673688101,
+        0.9592061862887836
+      ],
+      "clustered_macro_f1_95_ci": [
+        0.9443406424253796,
+        0.9577602168833331
+      ],
+      "confusion_matrix": [
+        [
+          2087,
+          48,
+          0
+        ],
+        [
+          117,
+          737,
+          0
+        ],
+        [
+          0,
+          5,
+          617
+        ]
+      ],
+      "per_class": {
+        "Low/Normal": {
+          "precision": 0.9469147005444646,
+          "recall": 0.9775175644028103,
+          "f1_score": 0.9619728047937313,
+          "specificity": 0.9207317073170732,
+          "support": 2135
+        },
+        "Medium": {
+          "precision": 0.9329113924050633,
+          "recall": 0.8629976580796253,
+          "f1_score": 0.8965936739659367,
+          "specificity": 0.9807762060210373,
+          "support": 854
+        },
+        "High": {
+          "precision": 1.0,
+          "recall": 0.9919614147909968,
+          "f1_score": 0.9959644874899112,
+          "specificity": 1.0,
+          "support": 622
+        }
+      }
     }
   },
   "scientific_disclaimer": "Research prototype for temperature-derived hazard screening. Not an operational fire detection system."

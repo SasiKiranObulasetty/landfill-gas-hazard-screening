@@ -24,7 +24,7 @@ Crucially, this report documents a decisive scientific boundary: while contempor
 
 Subsurface thermal reactions and smoldering combustion within municipal solid waste (MSW) landfills generate hazardous atmospheric emissions, degrade basal containment liners, and accelerate slope instability. Detection has historically required invasive downhole temperature sensors vulnerable to mechanical shear and acidic corrosion. This research designs, validates, and deploys a non-invasive machine learning screening architecture that estimates downhole temperature-derived risk categories directly from three routinely monitored wellhead gases: $\text{CH}_4$, $\text{CO}_2$, and $\text{O}_2$. Utilizing 18,469 verified compliance monitoring records collected under regulatory orders at Bridgeton Landfill, Missouri, we evaluate Dummy, Logistic Regression, and Random Forest estimators across chronological, grouped-well, and spatio-temporal holdout splits. 
 
-Random Forest demonstrates 96.01% out-of-sample accuracy and 100.0% recall for severe reaction states ($T \ge 176^\circ\text{F} / 80^\circ\text{C}$), with clustered well bootstrap 95% confidence intervals demonstrating robust spatial stability ([95.42%, 96.62%]). In contrast, seven-day lead-time forecasting yields only 45.79% accuracy, debunking claims of predictive time-series forecasting due to unobserved operational quenching actions by landfill operators. A modular Python and Streamlit web application is delivered for interactive single-wellhead and batch CSV screening, complete with physical input validation, uncertainty quantification, and strict scientific disclaimers.
+Random Forest demonstrates 96.01% out-of-sample accuracy and 100.0% recall for severe reaction states ($T \ge 176^\circ\text{F} / 80^\circ\text{C}$), with clustered well bootstrap 95% confidence intervals demonstrating robust spatial stability ([95.42%, 96.62%]). In contrast, seven-day lead-time forecasting yields only 35.79%–45.79% accuracy, failing to outperform naive persistence due to high empirical state volatility in monitoring records; while operator quenching actions (e.g., vacuum throttling or capping) have been hypothesized in technical literature as drivers of rapid thermal reversals, they remain unverified due to the absence of operational intervention logs in regulatory compliance records. A modular Python and Streamlit web application is delivered for interactive single-wellhead and batch CSV screening, complete with physical input validation, uncertainty quantification, and strict scientific disclaimers.
 
 ---
 
@@ -221,18 +221,40 @@ Models are evaluated across three distinct splitting strategies:
 
 | Experiment & Configuration | Feature Set | Split Type | Test $N$ (High $N$) | Accuracy | Clustered Acc 95% CI | Macro-F1 | Clustered F1 95% CI | High-Risk Recall | High-Risk Precision |
 | :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- |
-| **Dummy Baseline** | Prior Class | Chronological | 3,611 (622) | 0.6336 | [0.6120, 0.6550] | 0.2586 | [0.2450, 0.2710] | 0.0000 | 0.0000 |
+| **Dummy Baseline** | Prior Class | Chronological | 3,611 (622) | 0.5912 | [0.5749, 0.6083] | 0.2477 | [0.2434, 0.2521] | 0.0000 | 0.0000 |
 | **Logistic Regression Pipeline** | $\text{CH}_4, \text{CO}_2, \text{O}_2$ | Chronological | 3,611 (622) | 0.9272 | [0.9179, 0.9349] | 0.9301 | [0.9212, 0.9372] | **0.9984** | 0.9968 |
 | **Random Forest (Production)** | $\text{CH}_4, \text{CO}_2, \text{O}_2$ | Chronological | 3,611 (622) | **0.9601** | **[0.9542, 0.9662]** | **0.9606** | **[0.9549, 0.9664]** | **1.0000** | **1.0000** |
 | **Random Forest (Spatio-Temporal)** | $\text{CH}_4, \text{CO}_2, \text{O}_2$ | 30 Unseen Wells + Future | 704 (125) | **0.9574** | **[0.9435, 0.9709]** | **0.9591** | **[0.9464, 0.9719]** | **1.0000** | **1.0000** |
-| **Random Forest (GroupKFold)** | $\text{CH}_4, \text{CO}_2, \text{O}_2$ | 5-Fold Grouped Well CV | 18,469 (3,238) | **0.9567** | **[0.9542, 0.9592]** | **0.9551** | **[0.9526, 0.9576]** | **0.9997** | 0.9985 |
+| **Random Forest (GroupKFold)** | $\text{CH}_4, \text{CO}_2, \text{O}_2$ | 5-Fold Grouped Well CV | 18,469 (3,238) | **0.9567** | **[0.9542, 0.9593]** | **0.9551** | **[0.9523, 0.9578]** | **0.9997** | **1.0000** |
 | **7-Day Forecasting RF (Verified Test)** | 10 Feats at $t$ | Chronological $t+7\text{d}$ | 1,330 (245) | **0.3579** | [0.3320, 0.3840] | **0.2908** | [0.2680, 0.3140] | **0.1388** | 0.1236 |
 | **7-Day Forecasting RF (Phase 10 Variation)** | 7 Feats at $t$ | Chronological $t+7\text{d}$ | 1,391 (296) | **0.4579** | [0.4012, 0.5146] | **0.2908** | [0.2310, 0.3510] | **0.0811** | 0.1983 |
 
-### 11.2 The Physical Basis of 100% High-Risk Recall
-The finding that Random Forest achieves **100.0% recall on High-Risk cases** ($622/622$ in chronological test; $125/125$ on unseen wells) was subjected to intense scrutiny. Coordinate geometry analysis revealed that this performance is driven by **complete physical/geometric separability in $(\text{CH}_4, \text{CO}_2)$ space**:
-- **Normal Wells:** $\text{CH}_4 \in [45\%, 58\%]$, $\text{CO}_2 \in [35\%, 45\%]$.
-- **High Risk Wells ($T \ge 176^\circ\text{F}$):** $\text{CH}_4 \in [0\%, 34.8\%]$, $\text{CO}_2 \in [50.2\%, 74.6\%]$.
+### 11.2 Comprehensive Classical Machine Learning Model Comparison (8 Classifiers)
+
+To rigorously test whether alternative classical learning paradigms outperform or match Random Forest, 8 distinct classifiers were trained and evaluated on the exact same chronological holdout split ($N=3,611$ test observations, sampling date $\ge \text{2016-01-01}$, 8-month purge window). All candidate models were evaluated strictly using the 3 non-invasive gas features ($\text{CH}_4, \text{CO}_2, \text{O}_2$), with all preprocessing transformations (such as feature standard scaling for distance and margin methods) fitted exclusively on training data ($N=11,247$).
+
+| Classifier | Preprocessing Pipeline | Accuracy | Macro-F1 | Weighted-F1 | High-Risk Recall | High-Risk Precision | Train Time (s) | Infer Time (s) | Clustered Acc 95% CI |
+| :--- | :--- | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: |
+| **Dummy Majority Baseline** | None (Prior distribution) | 0.5912 | 0.2477 | 0.4394 | 0.0000 | 0.0000 | 0.1576 | 0.0026 | [0.5749, 0.6083] |
+| **Logistic Regression** | StandardScaler + Balanced | 0.9272 | 0.9301 | 0.9284 | 0.9984 | 0.9968 | 0.5795 | 0.0035 | [0.9179, 0.9349] |
+| **Random Forest (Production)** | Max Depth 10 + Balanced | **0.9601** | **0.9606** | **0.9601** | **1.0000** | **1.0000** | 1.2966 | 0.1655 | [0.9542, 0.9662] |
+| **Decision Tree** | Max Depth 10 + Balanced | 0.9554 | 0.9560 | 0.9554 | **1.0000** | 0.9968 | **0.0771** | **0.0025** | [0.9482, 0.9618] |
+| **Extra Trees** | 100 Trees + Balanced | 0.9416 | 0.9435 | 0.9422 | 0.9984 | 0.9968 | 0.6910 | 0.1114 | [0.9338, 0.9488] |
+| **HistGradientBoosting** | Iterations 100 + Balanced | 0.9521 | 0.9527 | 0.9521 | **1.0000** | **1.0000** | 4.7580 | 0.0355 | [0.9452, 0.9585] |
+| **Support Vector Machine (SVM)** | StandardScaler + RBF Kernel | 0.9358 | 0.9379 | 0.9366 | 0.9984 | 0.9952 | 11.6784 | 1.3609 | [0.9263, 0.9443] |
+| **K-Nearest Neighbors (KNN)** | StandardScaler + $k=5$ Distance | 0.9529 | 0.9515 | 0.9524 | 0.9920 | 0.9952 | **0.0503** | 0.0304 | [0.9454, 0.9598] |
+
+#### Key Analytical Insights
+1. **Ensemble & Tree Dominance:** Random Forest achieved the highest overall Accuracy (96.01%) and Macro-F1 (0.9606), closely followed by single Decision Tree (95.54%), KNN (95.29%), and HistGradientBoosting (95.21%).
+2. **High-Risk Class Sensitivity:** Random Forest, Decision Tree, and HistGradientBoosting all achieved **100.0% recall** on the High-Risk hazard class ($622/622$), validating the strong non-linear boundary formed by methanogenesis shutdown ($\text{CH}_4 < 35\%$, $\text{CO}_2 > 50\%$).
+3. **Computational Latency Comparison:** Decision Tree exhibited the lowest inference latency (**2.5 ms** for 3,611 samples; $\sim 0.7\,\mu\text{s}$ per query), making it exceptionally attractive for low-power edge microcontrollers. Conversely, SVM required the longest training time (11.68 s) and highest inference latency (1.36 s) due to quadratic kernel distance computations across large candidate sets.
+4. **Baseline Comparison:** All 7 trained classifiers significantly exceeded the zero-information majority baseline (59.12% Accuracy, 0.2477 Macro-F1), establishing that surface gas telemetry contains unambiguous biochemical signatures of subsurface thermal stress.
+
+### 11.3 The Physical Basis of High-Risk Classification
+The finding that Random Forest achieves **100.0% recall on High-Risk cases** ($622/622$ in chronological test; $125/125$ on unseen wells) was subjected to intense scrutiny. Coordinate geometry analysis revealed that this performance is driven by near-complete separability in $(\text{CH}_4, \text{CO}_2)$ space:
+- **Normal Wells:** Typically $\text{CH}_4 \in [45\%, 58\%]$, $\text{CO}_2 \in [35\%, 45\%]$.
+- **High Risk Wells ($T \ge 176^\circ\text{F}$):** In the primary verified dataset, high-risk gas concentrations span $\text{CH}_4 \in [10.10\%, 34.90\%]$ and $\text{CO}_2 \in [50.20\%, 74.70\%]$.
+- **Post-Hoc Empirical Boundary:** The rectangular cutoff boundary ($\text{CH}_4 \le 35.0\%$ and $\text{CO}_2 \ge 50.0\%$) was identified through post-hoc exploratory data analysis rather than as an a priori prespecified regulatory standard or universal physical threshold. Across all 18,469 observations, all 3,238 High-Risk records (100.0%) satisfy this boundary, while 15,230 out of 15,231 Non-High-Risk records (99.993%) remain outside. Exactly one non-high-risk observation satisfied this rule: borehole `GEW-45` measured on 2014-08-27, with downhole temperature $134.0^\circ\text{F}$ (Medium risk), $\text{CH}_4 = 34.8\%$, $\text{CO}_2 = 50.1\%$, and $\text{O}_2 = 1.2\%$.
 - **Thermodynamic Mechanism:** At temperatures above $140^\circ\text{F}$ ($60^\circ\text{C}$), methanogenic archaea die rapidly, halting methane generation. Concurrently, smoldering oxidation of organic carbon consumes residual oxygen and releases large volumes of carbon dioxide ($C + O_2 \to CO_2$). Consequently, elevated temperatures physically cannot coexist with normal methane levels. Even a linear hyper-plane (Logistic Regression) separates 99.84% of High-Risk instances.
 
 ---
